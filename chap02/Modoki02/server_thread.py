@@ -19,7 +19,7 @@ class ServerThread:
         output_stream = self.socket
 
         line = None
-        file_path = None
+        relative_path = None
         ext = None
         while True:
             # 一行読み取り
@@ -29,19 +29,27 @@ class ServerThread:
                 break
             # リクエストラインの場合
             if line.startswith("GET"):
-                file_path = line.split(" ")[1]
-                # フルパスを取得
-                file_path = os.path.join(self.DOCUMENT_ROOT, file_path.lstrip("/"))
+                relative_path = line.split(" ")[1]
+                # リクエストされたファイルのパスを取得
+                relative_path = os.path.join(
+                    self.DOCUMENT_ROOT, relative_path.lstrip("/")
+                )
                 # 拡張子を取得
-                _, ext = os.path.splitext(file_path)
+                _, ext = os.path.splitext(relative_path)
 
         try:
-            with open(file_path, "rb") as file:
+            # 相対パスを絶対パスに変換
+            absolute_path = os.path.realpath(relative_path, strict=True)
+            # 指定されたパスがドキュメントルート以下に無い場合(ディレクトリトラバーサル攻撃の可能性)
+            if not absolute_path.startswith(self.DOCUMENT_ROOT):
+                raise FileNotFoundError
+            with open(absolute_path, "rb") as file:
                 response_body = file.read()
-                print("%sをレスポンスとして返します。" % file_path)
+                print("%sをレスポンスとして返します。" % absolute_path)
                 self.send_response.send_ok_response(output_stream, response_body, ext)
         except FileNotFoundError:
-            # 指定されたファイルが見つからなかった場合
+            # 指定されたファイルが見つからなかった、またはドキュメントルート外にあった場合
+            print("%s は見つかりませんでした。" % relative_path)
             self.send_response.send_not_found_response(
                 output_stream, self.ERROR_DOCUMENT
             )
