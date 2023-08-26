@@ -7,7 +7,7 @@ class SendResponse:
         # レスポンスヘッダ送信
         m_util.write_line(output_stream, "HTTP/1.1 200 OK")
         m_util.write_line(output_stream, "Date: " + m_util.get_date_string_utc())
-        m_util.write_line(output_stream, "Server: Modoki/0.1")
+        m_util.write_line(output_stream, "Server: Modoki/0.2")
         m_util.write_line(output_stream, "Connection: close")
         m_util.write_line(
             output_stream, "Content-Type: " + m_util.get_content_type(ext)
@@ -15,6 +15,17 @@ class SendResponse:
         m_util.write_line(output_stream, "")
         # レスポンスボディ送信
         output_stream.sendall(response_body)
+
+    def send_move_permanently_response(self, output_stream, location):
+        m_util = util.Util()
+        # レスポンスヘッダ送信
+        m_util.write_line(output_stream, "HTTP/1.1 301 Moved Permanently")
+        m_util.write_line(output_stream, "Date: " + m_util.get_date_string_utc())
+        m_util.write_line(output_stream, "Server: Modoki/0.2")
+        m_util.write_line(output_stream, "Connection: close")
+        m_util.write_line(output_stream, "Location: " + location)
+        m_util.write_line(output_stream, "")
+        # レスポンスボディは無し
 
     def send_not_found_response(self, output_stream, error_document_root):
         m_util = util.Util()
