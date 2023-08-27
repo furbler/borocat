@@ -1,5 +1,6 @@
 import os
 import socket
+import urllib.parse
 import util
 import send_response
 
@@ -32,6 +33,8 @@ class ServerThread:
             # リクエストラインの場合
             if line.startswith("GET"):
                 request_path = line.split(" ")[1]
+                # UTF-8でURLデコード
+                request_path = urllib.parse.unquote(request_path, encoding="utf-8")
                 # 拡張子を取得
                 _, ext = os.path.splitext(request_path)
             elif line.startswith("Host:"):
@@ -75,7 +78,7 @@ class ServerThread:
                 self.send_response.send_ok_response(output_stream, response_body, ext)
         except FileNotFoundError:
             # 指定されたファイルが見つからなかった、またはドキュメントルート外にあった場合
-            print("%s は見つかりませんでした。" % absolute_path)
+            print("%s は見つかりませんでした。" % request_path)
             self.send_response.send_not_found_response(
                 output_stream, self.ERROR_DOCUMENT
             )
